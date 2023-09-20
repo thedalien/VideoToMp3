@@ -1,35 +1,46 @@
 const {onObjectFinalized} = require("firebase-functions/v2/storage");
 const {initializeApp} = require("firebase-admin/app");
 const {getStorage} = require("firebase-admin/storage");
-const {getFirestore} = require('firebase-admin/firestore');
 const logger = require("firebase-functions/logger");
 const path = require("path");
 const os = require("os");
 const fs = require('fs');
+// const {getFirestore, doc, setDoc} = require("firebase-admin/firestore");
+const admin = require('firebase-admin');
+const db = admin.firestore();
 
 
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 const ffmpeg = require("fluent-ffmpeg");
 
 initializeApp();
+// const db = getFirestore();
+
 
 exports.toMp3 = onObjectFinalized({region: "europe-west1"}, async (event) => {
-  const db = getFirestore();
   const fileBucket = event.data.bucket;
   const filePath = event.data.name;
   const contentType = event.data.contentType;
   logger.log("File detected: " + filePath);
-  
-  if (!contentType.startsWith("video/")) {
-    return logger.log("This is not a video.");
-  }
-  
-  const fileFolder = path.dirname(filePath);
-  logger.log("File folder: " + fileFolder);
-  const docRef = db.collection("files").doc(fileFolder);
-  await docRef.set({name: event.data.name});
 
   const fileName = path.basename(filePath);
+
+  await db.collection('transcoding').doc(fileName).set({
+    status: 'processing'
+  });
+  
+  
+
+  if (!contentType.startsWith("video/")) {
+    await db.collection('transcoding').doc(fileName).set({
+      status: 'failed'
+    });
+    return logger.log("This is not a video.");
+  }
+
+  const fileFolder = path.dirname(filePath);
+  logger.log("File folder: " + fileFolder);
+  
   logger.log("File detected: " + fileName);
   if (fileName.startsWith("converted_")) {
     return logger.log("Already converted.");
@@ -39,7 +50,6 @@ exports.toMp3 = onObjectFinalized({region: "europe-west1"}, async (event) => {
   const downloadResponse = await bucket.file(filePath).download();
   const videoBuffer = downloadResponse[0];
   logger.log("Video downloaded!");
-  await docRef.update({size: videoBuffer.length});
 
   let tmpFilePath = path.join(os.tmpdir(), fileName);
   logger.log("Tmp file path: " + tmpFilePath);
@@ -54,19 +64,12 @@ exports.toMp3 = onObjectFinalized({region: "europe-west1"}, async (event) => {
       .setFfmpegPath(ffmpegPath)
       .toFormat("mp3")
       .save(tmpOutputPath)
-      .on("progress", async (progress) => {
-        if (progress.percent) {
-          logger.log("Progress: " + progress.percent + "%");
-          await docRef.update({progress: progress.percent});
-        }
-      })
       .on("error", (err) => {
         logger.error(err.message);
         reject(err);
       })
-      .on("end", async () => {
+      .on("end", () => {
         logger.log("Conversion finished!");
-        await docRef.update({progress: 100});
         resolve();
       });
   });
@@ -77,7 +80,11 @@ exports.toMp3 = onObjectFinalized({region: "europe-west1"}, async (event) => {
     metadata: metadata,
   });
   
-  await docRef.update({converted: true});
+  await db.collection('transcoding').doc(fileName).set({
+    status: 'done'
+  });
+  
+  
   return logger.log("MP3 uploaded!");
 
 });
