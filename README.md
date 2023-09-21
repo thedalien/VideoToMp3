@@ -2,6 +2,9 @@
 
 This project is a learning exercise focused on working with FFmpeg, a powerful tool used for handling multimedia data. The project involves the creation of a web application that allows users to upload video files and transcode them into MP3 format.
 
+### Demo
+[Live Demo](https://mp4-to-mp3-3b274.web.app/)
+
 ## Backend
 
 The backend of the application is built with Firebase Functions. When a video file is uploaded to Firebase Storage, a function is triggered to transcode the video into MP3 format. This is done using the FFmpeg library. The resulting MP3 file is then uploaded to Firebase Storage. And Firestore is used to communicate the progress of the transcoding operation to the frontend.
