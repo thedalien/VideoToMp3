@@ -44,23 +44,28 @@ function App() {
   }
   
   return (
-    <>
-      <div className="App">
-        <input type='file' id='video' onChange={handleFileChange} accept="video/*"/>
-        {uploadProgress > 0 && uploadProgress < 100 && <progress value={uploadProgress} max="100" />}
-        {selectedFiles && <button onClick={handleUpload}>Upload</button>}
-        <div>
-          {conversionProgress > 0 && conversionProgress < 100 && 
-            <>
-            <progress value={conversionProgress} max="100" />
-            <br/>
-            <p>Converting...</p>
-            </>
-          }
-          {finished && <button onClick={handleDownload}>Dowload</button>}
-        </div>
+    <div className="App">
+      <div className="file-input-wrapper">
+        {selectedFiles && <p className="file-name">{selectedFiles[0].name}</p> }
+        <label htmlFor="video" className="file-input-label">Select Video</label>
+        <input type="file" id="video" onChange={handleFileChange} accept="video/*" className="file-input"/>
       </div>
-    </>
+      {uploadProgress > 0 && uploadProgress < 100 && 
+        <div className="progress-wrapper">
+          <progress value={uploadProgress} max="100" className="progress-bar"/>
+        </div>
+      }
+      {selectedFiles && <button onClick={handleUpload} className="upload-button">Upload</button>}
+      <div className="conversion-section">
+        {conversionProgress > 0 && conversionProgress < 100 && 
+          <div className="progress-wrapper">
+            <progress value={conversionProgress} max="100" className="progress-bar"/>
+            <p className="conversion-text">Converting...</p>
+          </div>
+        }
+        {finished && <button onClick={handleDownload} className="download-button">Download</button>}
+      </div>
+    </div>
   )
 }
 
