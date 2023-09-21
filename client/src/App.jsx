@@ -39,9 +39,18 @@ function App() {
     const storage = getStorage();
     const pathReference = ref(storage, `${data.uuid}/${data.convertedName}`);
     getDownloadURL(pathReference)
-      .then(url => window.open(url, '_blank'))
+      .then(url => {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = data.convertedName;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      })
       .catch(error => console.log(error));
   }
+  
   
   return (
     <div className="App">
