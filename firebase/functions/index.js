@@ -25,15 +25,10 @@ exports.toMp3 = onObjectFinalized({region: "europe-west1"}, async (event) => {
   }
   
   const fileFolder = path.dirname(filePath);
-  logger.log("File folder: " + fileFolder);
   const docRef = db.collection("files").doc(fileFolder);
   await docRef.set({name: event.data.name});
 
   const fileName = path.basename(filePath);
-  logger.log("File detected: " + fileName);
-  if (fileName.startsWith("converted_")) {
-    return logger.log("Already converted.");
-  }
 
   const bucket = getStorage().bucket(fileBucket);
   const downloadResponse = await bucket.file(filePath).download();
@@ -42,7 +37,6 @@ exports.toMp3 = onObjectFinalized({region: "europe-west1"}, async (event) => {
   await docRef.update({size: videoBuffer.length});
 
   let tmpFilePath = path.join(os.tmpdir(), fileName);
-  logger.log("Tmp file path: " + tmpFilePath);
   fs.writeFileSync(tmpFilePath, videoBuffer);
 
   const convertedFileName = "converted_" + fileName.replace(/\.[^/.]+$/, "");
